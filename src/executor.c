@@ -7,6 +7,8 @@
 #include<time.h>
 #include<stdio.h>
 #include<stdlib.h>
+#include<math.h>
+#include "macros.h"
 #include "executor.h"
 
 /**
@@ -16,7 +18,7 @@
 int setlimit(int type, long softlim, long hardlim) {
 	static struct rlimit lim;
 	static long pagesize = 0;
-	if(__builtin_expect(!pagesize, 1)) pagesize = sysconf(_SC_PAGESIZE);
+	if(rarely(!pagesize)) pagesize = sysconf(_SC_PAGESIZE);
 	//static long pagesize = sysconf(_SC_PAGESIZE);
 	lim.rlim_cur = softlim, lim.rlim_max = hardlim;
 	switch(type) {
@@ -30,4 +32,32 @@ int setlimit(int type, long softlim, long hardlim) {
 		default:
 			return -1;
 	}
+}
+
+pid_t execute(const char *args[], const struct res_lim *lim) {
+	pid_t child_pid;
+	double cputime;
+	long cpu_cur, cpu_max;
+	int child_status;
+	child_status = 0;
+	child_pid = vfork(); // Fork a new process to run.
+	if(rarely(child_pid < 0)) { // Error!
+		return -1;
+	}
+	if(child_pid == 0) { // We are now child.
+		setlimit(LIM_MEMORY, lim -> mem_cur, lim -> mem_max);
+		setlimit(LIM_FSIZE, lim -> fs_cur, lim -> fs_max);
+		if(rarely(fl(lim -> cpu_cur, 0.0))) cpu_cur = RLIM_INFINITY;
+		else cpu_cur = (long)ceil(lim -> cpu_cur);
+		if(rarely(fl(lim -> cpu_max, 0.0))) cpu_max = RLIM_INFINITY;
+		else cpu_max = (long)ceil(lim -> cpu_max);
+		setlimit(LIM_CPU, cpu_cur, cpu_max);
+		if(execvp(args[0], args)) {
+			child_status = -1;
+			_exit(1);
+		}
+	}
+	// We are parent.
+	if(child_status) return -1; // execvp failed.
+	return child_pid;
 }
