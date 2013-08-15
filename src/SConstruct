@@ -1,0 +1,5 @@
+env = Environment(CCFLAGS = '-std=gnu99 -Wall -O2', LINKFLAGS = '-Wall -std=gnu99 -g')
+env.Program(target = 'demo', source = ['demo.c', 'executor.c', 'monitor.c'], LIBS = ['m', 'rt'])
+env.Program(target = 'test', source = ['test.c'], CCLFAGS = '-std=gnu99 -Wall -O2 --static', LINKFLAGS = '-Wall -std=gnu99 --static')
+print 'use sudo ./demo ./test to test!'
+print 'it will try to read from /tmp/stdin.txt and write to /tmp/stdout.txt'
