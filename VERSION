@@ -1,3 +1,9 @@
+0.0.2
+=====
+
+Fix issue #2: SIGALRM handler did not interrupt waitid causes infinite
+sleep.
+
 0.0.1
 =====
 

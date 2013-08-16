@@ -15,3 +15,6 @@
 *.exe
 *.out
 *.app
+
+# Scons Database
+.sconsign.dblite

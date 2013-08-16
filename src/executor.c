@@ -44,10 +44,10 @@ int setlimit(int type, long softlim, long hardlim) {
 pid_t execute(char *const args[], const struct res_lim *lim) {
 	pid_t child_pid;
 	long cpu_cur, cpu_max;
-	//int child_status;
+	int child_status;
 	int hasError = 0;
-	//child_status = 0;
-	child_pid = fork(); // Fork a new process to run.
+	child_status = 0;
+	child_pid = vfork(); // Fork a new process to run.
 	if(rarely(child_pid < 0)) { // Error!
 		ERROR("Error at vfork!");
 		return -1;
@@ -125,16 +125,15 @@ pid_t execute(char *const args[], const struct res_lim *lim) {
 		for(register int i = 3; i < 1024; ++ i) close(i);
 
 		if(execvp(args[0], args) < 0) {
-//			child_status = -1;
+			child_status = -1;
+			ERROR("vfork ok, but execvp failed!");
 			_exit(-1);
 		}
 	}
-	// We are parent.
-//	if(child_status < 0) {
-//		ERROR("Child vfork success, buf execvp failed!");
-//		return -1;
-//	}
-	sprintf(_buff, "Child vfork OK. PID = %d", child_pid);
+	if (child_status < 0) {
+		return -1;
+	}
+	sprintf(_buff, "Child vfork and execvp OK. PID = %d", child_pid);
 	INFO(_buff);
 	return child_pid;
 }

@@ -21,8 +21,12 @@ struct itimerval clear = {
 	{0, 0}
 };
 
+static pid_t child;
+
 void getProgramStatus(pid_t who, const struct timeval *timeout, struct res_usage *result) {
 	/* Setup Alarm */
+	INFO("Monitor Called");
+	child = who;
 	static struct itimerval timer;
 	static clockid_t clk;
 	static struct timeb task_begin, task_end;
@@ -35,7 +39,9 @@ void getProgramStatus(pid_t who, const struct timeval *timeout, struct res_usage
 	timer.it_value.tv_sec = timeout -> tv_sec, timer.it_value.tv_usec = timeout -> tv_usec;
 	if(rarely(setitimer(ITIMER_REAL, &timer, NULL) < 0))
 		ERROR("Timer set failed!");
-	if(rarely(waitid(P_PID, who, &sig, WEXITED | WNOWAIT) < 0)) /* WNOWAIT: For later pull resource info. */
+	INFO("Begin monitoring child process.");
+	int status = waitid(P_PID, who, &sig, WEXITED | WNOWAIT);
+	if(rarely(status < 0)) /* WNOWAIT: For later pull resource info. */
 		ERROR("waitid failed!");
 	else {
 		if (sig.si_code == CLD_EXITED) {
@@ -51,7 +57,7 @@ void getProgramStatus(pid_t who, const struct timeval *timeout, struct res_usage
 		if(setitimer(ITIMER_REAL, &clear, NULL) < 0) ERROR("Timer clear failed!");
 	}
 	else {
-		if(kill(who, SIGKILL)) ERROR("Kill failed!");
+		result -> exitcode = -9;
 	}
 	ftime(&task_end);
 	int run_ms = (task_end.time - task_begin.time) * 1000 + (task_end.millitm - task_begin.millitm);
@@ -71,10 +77,13 @@ void getProgramStatus(pid_t who, const struct timeval *timeout, struct res_usage
 
 void alarmHandler(int signal) {
 	if (signal != SIGALRM) {
-	sprintf(_buff, "Handling unexpected signal %d", signal);
+		sprintf(_buff, "Handling unexpected signal %d", signal);
 		WARN(_buff);
 	}
 	TLE = 1;
 	INFO("Alarm signal handled");
+	if(rarely(kill(child, SIGKILL) < 0)) {
+		ERROR("Can't terminate child process!");
+	}
 }
 

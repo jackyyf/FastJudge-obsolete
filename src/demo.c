@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
 	memset(lim, 0, sizeof(struct res_lim));
 	lim -> mem_cur = lim -> mem_max = 16777216;
 	lim -> fs_cur = lim -> fs_max = 16777216;
-	lim -> fn_cur = lim -> fn_max = 3;
+	lim -> fn_cur = 3, lim -> fn_max = 3;
 	lim -> cpu_cur.tv_sec = 1, lim -> cpu_cur.tv_nsec = 0;
 	lim -> cpu_max.tv_sec = 2, lim -> cpu_max.tv_nsec = 0;
 	lim -> st_cur = lim -> st_max = 16777216;
-	lim -> ps_cur = 4096, lim -> ps_max = 4096;
+	lim -> ps_cur = 1, lim -> ps_max = 1;
 	lim -> uid = 9998, lim -> gid = 9998;
 	lim -> root = pwd;
 	lim -> filein = "/tmp/input.txt", lim -> fileout = "/tmp/output.txt";
