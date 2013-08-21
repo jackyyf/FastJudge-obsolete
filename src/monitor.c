@@ -32,6 +32,7 @@ void getProgramStatus(pid_t who, const struct timeval *timeout, struct res_usage
 	static struct timeb task_begin, task_end;
 	static siginfo_t sig;
 	static struct timespec cputime;
+	static struct rusage usage;
 	ftime(&task_begin);
 	if(rarely(signal(SIGALRM, alarmHandler) == SIG_ERR))
 		ERROR("Set signal handler failed!");
@@ -57,7 +58,7 @@ void getProgramStatus(pid_t who, const struct timeval *timeout, struct res_usage
 		if(setitimer(ITIMER_REAL, &clear, NULL) < 0) ERROR("Timer clear failed!");
 	}
 	else {
-		result -> exitcode = -9;
+		result -> exitcode = TIME_LIMIT_EXCEEDED;
 	}
 	ftime(&task_end);
 	int run_ms = (task_end.time - task_begin.time) * 1000 + (task_end.millitm - task_begin.millitm);
@@ -72,6 +73,12 @@ void getProgramStatus(pid_t who, const struct timeval *timeout, struct res_usage
 			result -> cputime.tv_sec = cputime.tv_sec;
 			result -> cputime.tv_nsec = cputime.tv_nsec;
 		}
+	}
+	wait(&status);
+	if(rarely(getrusage(RUSAGE_CHILDREN, &usage) < 0)) {
+		ERROR("Fetch Memory Usage Failed!");
+	} else {
+		result -> memusage = usage.ru_maxrss << 10;
 	}
 }
 

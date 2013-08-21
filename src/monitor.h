@@ -1,3 +1,5 @@
+#define TIME_LIMIT_EXCEEDED 0xDEADBEEF
+
 struct res_usage {
 	struct timespec cputime, realtime;
 	/* in bytes */
