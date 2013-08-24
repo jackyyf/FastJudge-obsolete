@@ -17,4 +17,7 @@
 *.app
 
 # Scons Database
-.sconsign.dblite
+.scon*
+
+# Build Log
+*.log

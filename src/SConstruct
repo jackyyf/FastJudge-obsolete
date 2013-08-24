@@ -1,5 +1,89 @@
-env = Environment(CCFLAGS = '-std=gnu99 -Wall -O2', LINKFLAGS = '-Wall -std=gnu99 -g')
-env.Program(target = 'demo', source = ['demo.c', 'executor.c', 'monitor.c'], LIBS = ['m', 'rt'])
-env.Program(target = 'test', source = ['test.c'], CCLFAGS = '-std=gnu99 -Wall -O2 --static', LINKFLAGS = '-Wall -std=gnu99 --static')
-print 'use sudo ./demo ./test to test!'
-print 'it will try to read from /tmp/stdin.txt and write to /tmp/stdout.txt'
+import sys
+
+def RequireHeader(header):
+	print 'You need %s to build this project.' % header
+	Exit(1)
+
+class AutoConf:
+	def __init__(self, env = None):
+		if env is None:
+			env = Environment()
+		self.conf = Configure(env)
+
+	def DepCHeader(self, header):
+		if not self.conf.CheckCHeader(header):
+			print 'You need %s to build this project.' % header
+			Exit(1)
+
+	def FindCHeader(self, header):
+		return self.conf.CheckCHeader(header)
+
+	def Finish(self):
+		return self.conf.Finish()
+
+	def RequireCC(self):
+		if not self.conf.CheckCC():
+			print 'You need a C Compiler to build this project.'
+			Exit(1)
+
+	def CheckCC(self):
+		return self.conf.CheckCC()
+
+	def RequireCXX(self):
+		if not self.conf.CheckCXX():
+			print 'You need a C++ Compiler to build this project.'
+			Exit(1)
+
+	def CheckCXX(self):
+		return self.conf.CheckCXX()
+
+
+	def CheckOS(self, recommend = [], notworking = []):
+		name = sys.platform
+		if name == 'linux2': # Patch Python 2.x annoying linux2
+			name = 'linux'
+		print 'Detecting OS... %s' % name
+		for breaks in notworking:
+			if name.startswith(breaks):
+				print 'Your system (%s) is not supported by this project.' % name
+				Exit(1)
+		for recom in recommend:
+			if name.startswith(recom):
+				return name
+		print "Your system (%s) may work with project, but it's not recommended by this project"
+		return name
+
+	def RequireOS(self, *require):
+		name = sys.platform
+		if name == 'linux2': # Patch Python 2.x annoying linux2
+			name = 'linux'
+		print 'Detecting OS... %s' % name
+		for req in require:
+			if name.startswith(req):
+				return
+		print 'Your system (%s) is not supported by this project.' % name
+		Exit(1)
+
+
+env = Environment()
+
+conf = AutoConf()
+conf.RequireOS('linux')
+conf.RequireCC()
+conf.DepCHeader('stdio.h')
+conf.DepCHeader('stdlib.h')
+conf.DepCHeader('math.h')
+conf.DepCHeader('string.h')
+conf.DepCHeader('unistd.h')
+conf.DepCHeader('fcntl.h')
+conf.DepCHeader('errno.h')
+conf.DepCHeader('time.h')
+conf.DepCHeader('signal.h')
+conf.DepCHeader('sys/wait.h')
+conf.DepCHeader('sys/resource.h')
+conf.DepCHeader('sys/time.h')
+conf.DepCHeader('sys/timeb.h')
+conf.DepCHeader('sys/types.h')
+conf.DepCHeader('sys/stat.h')
+
+env = conf.Finish()
